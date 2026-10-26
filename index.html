@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pucho Zara Pucho</title>
-    <!-- Inter Font (Closest clean open-source font to Google Sans / Gemini UI) -->
+    <!-- Inter Font (Google Sans style) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Marked.js library for rendering markdown from Gemini -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -19,7 +20,7 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #131314; /* Standard Gemini dark background */
+            background-color: #131314;
             color: #e3e3e3;
             display: flex;
             flex-direction: column;
@@ -131,6 +132,11 @@
             margin-bottom: 0;
         }
 
+        .loading-text {
+            color: #8e918f;
+            font-style: italic;
+        }
+
         /* Bottom Floating Input Container */
         #input-wrapper {
             width: 100%;
@@ -173,7 +179,7 @@
             color: #8e918f;
         }
 
-        /* Send Button with Red-Gradient Hover Touch */
+        /* Send Button */
         .send-btn {
             background: transparent;
             border: none;
@@ -202,12 +208,6 @@
         .send-btn:hover svg {
             fill: #ff5252;
         }
-
-        /* Red Sparkle Logo SVG Component */
-        .sparkle-icon {
-            width: 18px;
-            height: 18px;
-        }
     </style>
 </head>
 <body>
@@ -215,7 +215,6 @@
     <!-- Header -->
     <div id="header">
         <div class="brand">
-            <!-- Custom Red Gradient Icon -->
             <div class="bot-icon">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
@@ -227,7 +226,6 @@
 
     <!-- Main Chat Window -->
     <div id="chat-container">
-        <!-- Initial Welcome Message -->
         <div class="message-row">
             <div class="bot-icon">
                 <svg viewBox="0 0 24 24">
@@ -235,7 +233,7 @@
                 </svg>
             </div>
             <div class="bot-content">
-                Hello! I am <b>Pucho Zara Pucho</b>. How can I help you today?
+                Hello! I am <b>Pucho Zara Pucho</b>. Ask me anything!
             </div>
         </div>
     </div>
@@ -253,57 +251,106 @@
     </div>
 
     <script>
+        // Enter your Google Gemini API Key here
+        const GEMINI_API_KEY = 'AQ.Ab8RN6Ibn2FNVyW251RVy0UQrSYw5PJtgC-QsMi-3eyvMndGLQ';
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
 
-        // Auto-expand textarea height up to a maximum limit
+        // Auto-expand textarea height
         userInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
 
-        // Add user or bot message dynamically
-        function addMessage(content, sender = 'bot') {
+        function addMessage(content, sender = 'bot', isTextOnly = false) {
             const row = document.createElement('div');
             row.className = `message-row ${sender}`;
 
             if (sender === 'user') {
                 row.innerHTML = `<div class="user-bubble">${content}</div>`;
             } else {
+                const formattedHtml = isTextOnly ? content : marked.parse(content);
                 row.innerHTML = `
                     <div class="bot-icon">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
                         </svg>
                     </div>
-                    <div class="bot-content">${marked.parse(content)}</div>
+                    <div class="bot-content">${formattedHtml}</div>
                 `;
             }
 
             chatContainer.appendChild(row);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            return row;
         }
 
-        function handleSend() {
+        // Send query directly to Gemini API
+        async function fetchGeminiResponse(prompt) {
+            const payload = {
+                contents: [{
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+                return 'Sorry, I could not generate a response. Please try again.';
+            } catch (err) {
+                console.error('[Gemini API Error]', err);
+                return 'An error occurred while connecting to Gemini. Please check your API key.';
+            }
+        }
+
+        async function handleSend() {
             const text = userInput.value.trim();
             if (!text) return;
 
-            // Render user input
             addMessage(text, 'user');
             userInput.value = '';
             userInput.style.height = '24px';
 
-            // Placeholder AI Response (Replace with your backend / Gemini API call)
-            setTimeout(() => {
-                addMessage("I am **Pucho Zara Pucho**. You asked: *" + text + "*. How else can I assist you?");
-            }, 600);
+            // Show loading placeholder
+            const loadingRow = addMessage('<span class="loading-text">Thinking...</span>', 'bot', true);
+
+            // Fetch answer directly from Gemini
+            const geminiAnswer = await fetchGeminiResponse(text);
+
+            // Remove loading placeholder and display AI answer
+            chatContainer.removeChild(loadingRow);
+            addMessage(geminiAnswer, 'bot');
         }
 
         sendBtn.addEventListener('click', handleSend);
         userInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
+                handleSend();
+            }
+        });
+
+        // Automatically trigger search if passed via URL parameter (?q=your_query)
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const queryParam = params.get('q');
+            if (queryParam && queryParam.trim().length > 0) {
+                userInput.value = queryParam.trim();
                 handleSend();
             }
         });
