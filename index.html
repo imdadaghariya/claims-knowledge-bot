@@ -3,290 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claims Knowledge Assistant</title>
-    <!-- Marked.js library to format markdown -->
+    <title>Pucho Zara Pucho</title>
+    <!-- Inter Font (Closest clean open-source font to Google Sans / Gemini UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f8fafc;
-            position: relative; overflow: hidden;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #131314; /* Standard Gemini dark background */
+            color: #e3e3e3;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Header */
         #header {
-            padding: 14px 20px;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 18px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background-color: #131314;
         }
-        #header h1 {
-            font-size: 15px; margin: 0; color: #0f172a; font-weight: 600;
-        }
-        #header span {
-            font-size: 11px; color: #0052cc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        #chat-container {
-            flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
-        }
-        .message {
-            max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; word-wrap: break-word; font-size: 13px;
-        }
-        .user-message {
-            background-color: #0052cc; color: white; align-self: flex-end; border-bottom-right-radius: 2px;
-        }
-        .bot-message {
-            background-color: #ffffff; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px;
-            border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        .article-card {
-            margin-top: 10px; padding: 10px 12px; background: #f1f5f9;
-            border-left: 3px solid #0052cc; border-radius: 6px;
-        }
-        .article-card-title {
-            font-weight: 600; font-size: 13px; color: #0f172a; margin-bottom: 4px;
-        }
-        .article-card-snippet {
-            font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.4;
-        }
-        .article-action-btn {
-            color: #0052cc; font-weight: 600; font-size: 12px; background: none; border: none; padding: 0;
-            cursor: pointer; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;
-        }
-        .article-action-btn:hover { color: #0747a6; }
-        .message p { margin: 0 0 8px 0; }
-        .message p:last-child { margin: 0; }
-        .loading { font-style: italic; color: #64748b; font-size: 12px; }
-        #input-container {
-            display: flex; padding: 12px 16px; background: white; border-top: 1px solid #e2e8f0;
-        }
-        #user-input {
-            flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none; font-size: 13px;
-        }
-        #user-input:focus { border-color: #0052cc; }
-        #send-btn {
-            background-color: #0052cc; color: white; border: none; padding: 0 18px; margin-left: 8px;
-            border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px;
-        }
-        #send-btn:hover { background-color: #0747a6; }
 
-        /* Full Article Modal View */
-        #article-modal {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; display: none; flex-direction: column; z-index: 100;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        #modal-header {
-            padding: 12px 16px; background: #0052cc; color: white; display: flex;
-            align-items: center; justify-content: space-between;
+
+        /* Red-Tone Gradient Bot Icon */
+        .bot-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff2a5f 0%, #ff5252 40%, #ff7e40 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 12px rgba(255, 42, 95, 0.35);
+            flex-shrink: 0;
         }
-        #modal-header h2 { font-size: 14px; margin: 0; font-weight: 600; }
-        #close-modal-btn {
-            background: none; border: none; color: white; font-size: 18px; cursor: pointer; font-weight: bold;
+
+        .bot-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: #ffffff;
         }
-        #modal-body {
-            flex: 1; padding: 16px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: #334155;
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #e3e3e3;
+            letter-spacing: -0.2px;
+        }
+
+        /* Chat Scroll Area */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Scrollbar Styling */
+        #chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #282a2c;
+            border-radius: 4px;
+        }
+
+        /* Message Rows */
+        .message-row {
+            display: flex;
+            gap: 16px;
+            padding: 0 24px;
+            width: 100%;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        /* User Message Bubble */
+        .user-bubble {
+            background-color: #282a2c;
+            color: #e3e3e3;
+            padding: 12px 20px;
+            border-radius: 20px;
+            max-width: 75%;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        /* Bot Message Content Area */
+        .bot-content {
+            flex: 1;
+            color: #e3e3e3;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-top: 4px;
+        }
+
+        .bot-content p {
+            margin-bottom: 12px;
+        }
+
+        .bot-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Bottom Floating Input Container */
+        #input-wrapper {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px 24px 24px;
+        }
+
+        .input-box {
+            background-color: #1e1f20;
+            border: 1px solid #282a2c;
+            border-radius: 28px;
+            padding: 12px 16px 12px 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .input-box:focus-within {
+            border-color: #ff3b60;
+            background-color: #222325;
+        }
+
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e3e3e3;
+            font-family: inherit;
+            font-size: 15px;
+            resize: none;
+            height: 24px;
+            max-height: 120px;
+            line-height: 24px;
+        }
+
+        textarea::placeholder {
+            color: #8e918f;
+        }
+
+        /* Send Button with Red-Gradient Hover Touch */
+        .send-btn {
+            background: transparent;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 42, 95, 0.2) 0%, rgba(255, 126, 64, 0.2) 100%);
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #8e918f;
+            transition: fill 0.2s ease;
+        }
+
+        .send-btn:hover svg {
+            fill: #ff5252;
+        }
+
+        /* Red Sparkle Logo SVG Component */
+        .sparkle-icon {
+            width: 18px;
+            height: 18px;
         }
     </style>
 </head>
 <body>
+
+    <!-- Header -->
     <div id="header">
-        <h1>Amica Claims Assistant</h1>
-        <span>eGain + Gemini POC</span>
+        <div class="brand">
+            <!-- Custom Red Gradient Icon -->
+            <div class="bot-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+                </svg>
+            </div>
+            <span class="brand-title">Pucho Zara Pucho</span>
+        </div>
     </div>
 
+    <!-- Main Chat Window -->
     <div id="chat-container">
-        <div class="message bot-message">
-            Hello! I am your Claims & Knowledge Assistant. Ask a question or search policies below.
+        <!-- Initial Welcome Message -->
+        <div class="message-row">
+            <div class="bot-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+                </svg>
+            </div>
+            <div class="bot-content">
+                Hello! I am <b>Pucho Zara Pucho</b>. How can I help you today?
+            </div>
         </div>
     </div>
 
-    <div id="input-container">
-        <input type="text" id="user-input" placeholder="Search guidelines or ask a question..." autocomplete="off">
-        <button id="send-btn">Send</button>
-    </div>
-
-    <!-- Full Article Inline Modal -->
-    <div id="article-modal">
-        <div id="modal-header">
-            <h2 id="modal-title">Full Knowledge Article</h2>
-            <button id="close-modal-btn">&times;</button>
+    <!-- Floating Bottom Input -->
+    <div id="input-wrapper">
+        <div class="input-box">
+            <textarea id="user-input" placeholder="Ask me." rows="1"></textarea>
+            <button class="send-btn" id="send-btn" title="Send">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
         </div>
-        <div id="modal-body">Loading full article content...</div>
     </div>
 
     <script>
-        var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
-        var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
 
-        var chatContainer = document.getElementById('chat-container');
-        var userInput = document.getElementById('user-input');
-        var sendBtn = document.getElementById('send-btn');
-        var articleModal = document.getElementById('article-modal');
-        var modalTitle = document.getElementById('modal-title');
-        var modalBody = document.getElementById('modal-body');
-        var closeModalBtn = document.getElementById('close-modal-btn');
-
-        function addMessage(htmlContent, sender, isRawText) {
-            var msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
-
-            if (sender === 'bot' && !isRawText) {
-                msgDiv.innerHTML = htmlContent;
-            } else {
-                msgDiv.textContent = htmlContent;
-            }
-
-            chatContainer.appendChild(msgDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            return msgDiv;
-        }
-
-        /**
-         * Search Wikipedia and fetch both summary and full HTML article extract
-         */
-        function searchWikipediaKnowledgeBase(query) {
-            var searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' + 
-                             encodeURIComponent(query) + '&limit=1&namespace=0&format=json&origin=*';
-
-            return fetch(searchUrl)
-                .then(function(res) {
-                    if (!res.ok) throw new Error('Search failed');
-                    return res.json();
-                })
-                .then(function(data) {
-                    var titles = data[1] || [];
-                    if (titles.length === 0) return null;
-
-                    var matchedTitle = titles[0];
-                    var summaryUrl = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(matchedTitle);
-
-                    return fetch(summaryUrl)
-                        .then(function(res) { return res.json(); })
-                        .then(function(summaryData) {
-                            return {
-                                title: summaryData.title || matchedTitle,
-                                snippet: summaryData.extract || 'No snippet available.',
-                                fullTextHtml: summaryData.extract_html || summaryData.extract
-                            };
-                        });
-                })
-                .catch(function(err) {
-                    console.error('[Wikipedia API Error]', err);
-                    return null;
-                });
-        }
-
-        /**
-         * Fetch full article sections for modal view
-         */
-        window.openFullArticleModal = function(title) {
-            modalTitle.textContent = title;
-            modalBody.innerHTML = '<i>Loading full document content...</i>';
-            articleModal.style.display = 'flex';
-
-            // Fetch full HTML content from Wikipedia Mobile HTML API
-            var fullContentUrl = 'https://en.wikipedia.org/api/rest_v1/page/html/' + encodeURIComponent(title);
-
-            fetch(fullContentUrl)
-                .then(function(res) {
-                    if (!res.ok) throw new Error('Failed to load full article');
-                    return res.text();
-                })
-                .then(function(htmlText) {
-                    modalBody.innerHTML = htmlText;
-                })
-                .catch(function() {
-                    modalBody.innerHTML = '<p>Unable to load full article content inside the viewer.</p>';
-                });
-        };
-
-        closeModalBtn.addEventListener('click', function() {
-            articleModal.style.display = 'none';
+        // Auto-expand textarea height up to a maximum limit
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
 
-        function generateAIAnswer(query, matchedArticle) {
-            var contextText = '';
-            if (matchedArticle) {
-                contextText = 'Use this reference article to answer:\nTitle: ' + matchedArticle.title + '\nContent: ' + matchedArticle.snippet;
+        // Add user or bot message dynamically
+        function addMessage(content, sender = 'bot') {
+            const row = document.createElement('div');
+            row.className = `message-row ${sender}`;
+
+            if (sender === 'user') {
+                row.innerHTML = `<div class="user-bubble">${content}</div>`;
+            } else {
+                row.innerHTML = `
+                    <div class="bot-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+                        </svg>
+                    </div>
+                    <div class="bot-content">${marked.parse(content)}</div>
+                `;
             }
 
-            var prompt = 'You are an Amica enterprise claims support assistant. Answer the user question concisely in 2-3 sentences based on the context.\n' +
-                         contextText + '\n\nUser Question: ' + query;
-
-            return fetch(GEMINI_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                return data.candidates[0].content.parts[0].text;
-            })
-            .catch(function() {
-                return 'Here is the relevant document from the knowledge base:';
-            });
-        }
-
-        function triggerSearch(text) {
-            addMessage(text, 'user', true);
-
-            var loadingMsg = addMessage('Searching knowledge base & synthesizing...', 'bot', true);
-            loadingMsg.className += ' loading';
-
-            searchWikipediaKnowledgeBase(text)
-                .then(function(article) {
-                    return generateAIAnswer(text, article).then(function(aiResponse) {
-                        return { article: article, aiText: aiResponse };
-                    });
-                })
-                .then(function(result) {
-                    chatContainer.removeChild(loadingMsg);
-
-                    var parsedHtml = marked.parse(result.aiText);
-
-                    if (result.article) {
-                        var snippet = result.article.snippet.length > 140 
-                            ? result.article.snippet.substring(0, 140) + '...' 
-                            : result.article.snippet;
-
-                        var escapedTitle = result.article.title.replace(/'/g, "\\'");
-
-                        parsedHtml += 
-                            '<div class="article-card">' +
-                                '<div class="article-card-title">' + result.article.title + '</div>' +
-                                '<div class="article-card-snippet">' + snippet + '</div>' +
-                                '<button class="article-action-btn" onclick="openFullArticleModal(\'' + escapedTitle + '\')">' +
-                                    '📄 Read Full Article Inside Chatbot' +
-                                '</button>' +
-                            '</div>';
-                    }
-
-                    addMessage(parsedHtml, 'bot', false);
-                })
-                .catch(function() {
-                    chatContainer.removeChild(loadingMsg);
-                    addMessage('An error occurred while retrieving knowledge base articles.', 'bot', true);
-                });
+            chatContainer.appendChild(row);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         function handleSend() {
-            var text = userInput.value.replace(/^\s+|\s+$/g, '');
+            const text = userInput.value.trim();
             if (!text) return;
+
+            // Render user input
+            addMessage(text, 'user');
             userInput.value = '';
-            triggerSearch(text);
+            userInput.style.height = '24px';
+
+            // Placeholder AI Response (Replace with your backend / Gemini API call)
+            setTimeout(() => {
+                addMessage("I am **Pucho Zara Pucho**. You asked: *" + text + "*. How else can I assist you?");
+            }, 600);
         }
 
         sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleSend();
-        });
-
-        window.addEventListener('DOMContentLoaded', function() {
-            var params = new URLSearchParams(window.location.search);
-            var queryParam = params.get('q');
-            if (queryParam && queryParam.trim().length > 0) {
-                triggerSearch(queryParam.trim());
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
             }
         });
     </script>
