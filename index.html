@@ -3,234 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pucho Zara Pucho</title>
-    <!-- Inter Font (Google Sans style) -->
+    <title>Bol Bhai</title>
+    <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Marked.js library for rendering markdown from Gemini -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #131314;
-            color: #e3e3e3;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            background-color: #131314; color: #e3e3e3;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
-
-        /* Top Header */
-        #header {
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: #131314;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* Red-Tone Gradient Bot Icon */
+        #header { padding: 18px 24px; display: flex; align-items: center; background-color: #131314; }
+        .brand { display: flex; align-items: center; gap: 12px; }
         .bot-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            width: 32px; height: 32px; border-radius: 50%;
             background: linear-gradient(135deg, #ff2a5f 0%, #ff5252 40%, #ff7e40 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 12px rgba(255, 42, 95, 0.35);
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 12px rgba(255, 42, 95, 0.35); flex-shrink: 0;
         }
-
-        .bot-icon svg {
-            width: 18px;
-            height: 18px;
-            fill: #ffffff;
-        }
-
-        .brand-title {
-            font-size: 18px;
-            font-weight: 500;
-            color: #e3e3e3;
-            letter-spacing: -0.2px;
-        }
-
-        /* Chat Scroll Area */
+        .bot-icon svg { width: 18px; height: 18px; fill: #ffffff; }
+        .brand-title { font-size: 18px; font-weight: 500; color: #e3e3e3; letter-spacing: -0.2px; }
         #chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+            flex: 1; overflow-y: auto; padding: 24px 0; display: flex; flex-direction: column;
+            gap: 24px; width: 100%; max-width: 800px; margin: 0 auto;
         }
-
-        /* Scrollbar Styling */
-        #chat-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        #chat-container::-webkit-scrollbar-thumb {
-            background: #282a2c;
-            border-radius: 4px;
-        }
-
-        /* Message Rows */
-        .message-row {
-            display: flex;
-            gap: 16px;
-            padding: 0 24px;
-            width: 100%;
-        }
-
-        .message-row.user {
-            justify-content: flex-end;
-        }
-
-        /* User Message Bubble */
+        #chat-container::-webkit-scrollbar { width: 8px; }
+        #chat-container::-webkit-scrollbar-thumb { background: #282a2c; border-radius: 4px; }
+        .message-row { display: flex; gap: 16px; padding: 0 24px; width: 100%; }
+        .message-row.user { justify-content: flex-end; }
         .user-bubble {
-            background-color: #282a2c;
-            color: #e3e3e3;
-            padding: 12px 20px;
-            border-radius: 20px;
-            max-width: 75%;
-            font-size: 15px;
-            line-height: 1.5;
-            word-wrap: break-word;
+            background-color: #282a2c; color: #e3e3e3; padding: 12px 20px;
+            border-radius: 20px; max-width: 75%; font-size: 15px; line-height: 1.5; word-wrap: break-word;
         }
-
-        /* Bot Message Content Area */
-        .bot-content {
-            flex: 1;
-            color: #e3e3e3;
-            font-size: 15px;
-            line-height: 1.6;
-            margin-top: 4px;
-        }
-
-        .bot-content p {
-            margin-bottom: 12px;
-        }
-
-        .bot-content p:last-child {
-            margin-bottom: 0;
-        }
-
-        .loading-text {
-            color: #8e918f;
-            font-style: italic;
-        }
-
-        /* Bottom Floating Input Container */
-        #input-wrapper {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 24px 24px 24px;
-        }
-
+        .bot-content { flex: 1; color: #e3e3e3; font-size: 15px; line-height: 1.6; margin-top: 4px; }
+        .bot-content p { margin-bottom: 12px; }
+        .bot-content p:last-child { margin-bottom: 0; }
+        .loading-text { color: #8e918f; font-style: italic; }
+        .error-text { color: #ff6b6b; font-size: 14px; }
+        #input-wrapper { width: 100%; max-width: 800px; margin: 0 auto; padding: 0 24px 24px 24px; }
         .input-box {
-            background-color: #1e1f20;
-            border: 1px solid #282a2c;
-            border-radius: 28px;
-            padding: 12px 16px 12px 22px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            background-color: #1e1f20; border: 1px solid #282a2c; border-radius: 28px;
+            padding: 12px 16px 12px 22px; display: flex; align-items: center; gap: 12px;
             transition: border-color 0.2s ease, background-color 0.2s ease;
         }
-
-        .input-box:focus-within {
-            border-color: #ff3b60;
-            background-color: #222325;
-        }
-
+        .input-box:focus-within { border-color: #ff3b60; background-color: #222325; }
         textarea {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #e3e3e3;
-            font-family: inherit;
-            font-size: 15px;
-            resize: none;
-            height: 24px;
-            max-height: 120px;
-            line-height: 24px;
+            flex: 1; background: transparent; border: none; outline: none;
+            color: #e3e3e3; font-family: inherit; font-size: 15px; resize: none;
+            height: 24px; max-height: 120px; line-height: 24px;
         }
-
-        textarea::placeholder {
-            color: #8e918f;
-        }
-
-        /* Send Button */
+        textarea::placeholder { color: #8e918f; }
         .send-btn {
-            background: transparent;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            flex-shrink: 0;
+            background: transparent; border: none; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.2s ease; flex-shrink: 0;
         }
-
-        .send-btn:hover {
-            background: linear-gradient(135deg, rgba(255, 42, 95, 0.2) 0%, rgba(255, 126, 64, 0.2) 100%);
-        }
-
-        .send-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: #8e918f;
-            transition: fill 0.2s ease;
-        }
-
-        .send-btn:hover svg {
-            fill: #ff5252;
-        }
+        .send-btn:hover { background: linear-gradient(135deg, rgba(255, 42, 95, 0.2) 0%, rgba(255, 126, 64, 0.2) 100%); }
+        .send-btn svg { width: 20px; height: 20px; fill: #8e918f; transition: fill 0.2s ease; }
+        .send-btn:hover svg { fill: #ff5252; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <div id="header">
         <div class="brand">
             <div class="bot-icon">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
-                </svg>
+                <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
             </div>
-            <span class="brand-title">Pucho Zara Pucho</span>
+            <span class="brand-title"></span>
         </div>
     </div>
 
-    <!-- Main Chat Window -->
     <div id="chat-container">
         <div class="message-row">
             <div class="bot-icon">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
-                </svg>
+                <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
             </div>
             <div class="bot-content">
                 Hello! I am <b>Pucho Zara Pucho</b>. Ask me anything!
@@ -238,28 +89,26 @@
         </div>
     </div>
 
-    <!-- Floating Bottom Input -->
     <div id="input-wrapper">
         <div class="input-box">
             <textarea id="user-input" placeholder="Ask me." rows="1"></textarea>
             <button class="send-btn" id="send-btn" title="Send">
-                <svg viewBox="0 0 24 24">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                </svg>
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
         </div>
     </div>
 
     <script>
-        // Enter your Google Gemini API Key here
-        const GEMINI_API_KEY = 'AQ.Ab8RN6Ibn2FNVyW251RVy0UQrSYw5PJtgC-QsMi-3eyvMndGLQ';
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        // Insert your newly created Google Gemini API Key here
+        const GEMINI_API_KEY = 'AQ.Ab8RN6IxvImSKqeQUUWKRjxSFr7c9lsbR023jgecCGI8SKHyJA';
+        
+        // Corrected Model Endpoint URL
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
 
-        // Auto-expand textarea height
         userInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
@@ -275,9 +124,7 @@
                 const formattedHtml = isTextOnly ? content : marked.parse(content);
                 row.innerHTML = `
                     <div class="bot-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
                     </div>
                     <div class="bot-content">${formattedHtml}</div>
                 `;
@@ -288,12 +135,9 @@
             return row;
         }
 
-        // Send query directly to Gemini API
         async function fetchGeminiResponse(prompt) {
             const payload = {
-                contents: [{
-                    parts: [{ text: prompt }]
-                }]
+                contents: [{ parts: [{ text: prompt }] }]
             };
 
             try {
@@ -304,17 +148,19 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('API request failed');
+                    const errData = await response.json();
+                    console.error('[Gemini API Error Detail]', errData);
+                    throw new Error(`HTTP Error ${response.status}: ${errData.error?.message || 'Request Failed'}`);
                 }
 
                 const data = await response.json();
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
                     return data.candidates[0].content.parts[0].text;
                 }
-                return 'Sorry, I could not generate a response. Please try again.';
+                return 'No response text received from Gemini.';
             } catch (err) {
-                console.error('[Gemini API Error]', err);
-                return 'An error occurred while connecting to Gemini. Please check your API key.';
+                console.error('[Gemini API Catch]', err);
+                return `<span class="error-text">⚠️ <b>Connection Error:</b> ${err.message}</span>`;
             }
         }
 
@@ -326,13 +172,9 @@
             userInput.value = '';
             userInput.style.height = '24px';
 
-            // Show loading placeholder
             const loadingRow = addMessage('<span class="loading-text">Thinking...</span>', 'bot', true);
-
-            // Fetch answer directly from Gemini
             const geminiAnswer = await fetchGeminiResponse(text);
 
-            // Remove loading placeholder and display AI answer
             chatContainer.removeChild(loadingRow);
             addMessage(geminiAnswer, 'bot');
         }
@@ -345,7 +187,6 @@
             }
         });
 
-        // Automatically trigger search if passed via URL parameter (?q=your_query)
         window.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             const queryParam = params.get('q');
