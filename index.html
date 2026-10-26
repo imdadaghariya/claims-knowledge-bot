@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eGain Knowledge Assistant</title>
+    <!-- Marked.js library to parse Markdown responses -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f8fafc;
+        }
+        #header {
+            padding: 14px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #header h1 {
+            font-size: 15px; margin: 0; color: #0f172a; font-weight: 600;
+        }
+        #header span {
+            font-size: 12px; color: #0052cc; font-weight: 500;
+        }
+        #chat-container {
+            flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+        }
+        .message {
+            max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; word-wrap: break-word; font-size: 13px;
+        }
+        .user-message {
+            background-color: #0052cc; color: white; align-self: flex-end; border-bottom-right-radius: 2px;
+        }
+        .bot-message {
+            background-color: #ffffff; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px;
+            border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        /* Article Card Inside Chat Bubble */
+        .article-card {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: #f1f5f9;
+            border-left: 3px solid #0052cc;
+            border-radius: 6px;
+        }
+        .article-card-title {
+            font-weight: 600; font-size: 13px; color: #0f172a; margin-bottom: 4px;
+        }
+        .article-card-snippet {
+            font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.4;
+        }
+        .article-link {
+            color: #0052cc; font-weight: 600; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .article-link:hover { text-decoration: underline; }
+
+        /* Markdown formatting */
+        .message p { margin: 0 0 8px 0; }
+        .message p:last-child { margin: 0; }
+        .message ul, .message ol { margin: 0 0 8px 0; padding-left: 18px; }
+        .message ul:last-child, .message ol:last-child { margin: 0; }
+        .loading { font-style: italic; color: #64748b; font-size: 12px; }
+
+        #input-container {
+            display: flex; padding: 12px 16px; background: white; border-top: 1px solid #e2e8f0;
+        }
+        #user-input {
+            flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none; font-size: 13px;
+        }
+        #user-input:focus { border-color: #0052cc; }
+        #send-btn {
+            background-color: #0052cc; color: white; border: none; padding: 0 18px; margin-left: 8px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px;
+        }
+        #send-btn:hover { background-color: #0747a6; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Claims Assistant</h1>
+        <span>Powered by eGain & Gemini</span>
+    </div>
+
+    <div id="chat-container">
+        <div class="message bot-message">
+            Hello! I am your Claims & Knowledge Assistant. Search for policy guidelines, FNOL workflows, or SOP articles below.
+        </div>
+    </div>
+
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="Search guidelines or ask a question..." autocomplete="off">
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        // Replace with your active Gemini API Key
+        var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+        var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
+        var MOCK_EGAIN_SEARCH_URL = 'https://dummyjson.com/posts/search?q=';
+
+        var chatContainer = document.getElementById('chat-container');
+        var userInput = document.getElementById('user-input');
+        var sendBtn = document.getElementById('send-btn');
+
+        function addMessage(htmlContent, sender, isRawText) {
+            var msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
+
+            if (sender === 'bot' && !isRawText) {
+                msgDiv.innerHTML = htmlContent;
+            } else {
+                msgDiv.textContent = htmlContent;
+            }
+
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return msgDiv;
+        }
+
+        // Query mock eGain Search API
+        function searchMockEGain(query) {
+            return fetch(MOCK_EGAIN_SEARCH_URL + encodeURIComponent(query))
+                .then(function(res) {
+                    if (!res.ok) throw new Error('Search failed');
+                    return res.json();
+                })
+                .then(function(data) {
+                    return data.posts || [];
+                })
+                .catch(function(err) {
+                    console.error('[eGain API Error]', err);
+                    return [];
+                });
+        }
+
+        // Ask Gemini to synthesize an answer based on user query and returned articles
+        function generateAIAnswer(query, matchedArticles) {
+            var contextText = '';
+            if (matchedArticles.length > 0) {
+                contextText = 'Use these reference articles to answer:\n' +
+                    matchedArticles.map(function(a) { return '- ' + a.title + ': ' + a.body; }).join('\n');
+            }
+
+            var prompt = 'You are a claims support assistant. Answer the user question concisely in 2-3 sentences.\n' +
+                         contextText + '\n\nUser Question: ' + query;
+
+            var payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            return fetch(GEMINI_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(res) {
+                if (!res.ok) throw new Error('Gemini API Error');
+                return res.json();
+            })
+            .then(function(data) {
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+                return 'No summary available.';
+            })
+            .catch(function(err) {
+                return 'Here is what was found in the knowledge repository:';
+            });
+        }
+
+        function handleSend() {
+            var text = userInput.value.replace(/^\s+|\s+$/g, '');
+            if (!text) return;
+
+            addMessage(text, 'user', true);
+            userInput.value = '';
+
+            var loadingMsg = addMessage('Searching knowledge repository...', 'bot', true);
+            loadingMsg.className += ' loading';
+
+            // 1. Fetch matching articles from Mock eGain
+            searchMockEGain(text)
+                .then(function(articles) {
+                    // 2. Query Gemini for conversational synthesis
+                    return generateAIAnswer(text, articles).then(function(aiResponse) {
+                        return { articles: articles, aiText: aiResponse };
+                    });
+                })
+                .then(function(result) {
+                    chatContainer.removeChild(loadingMsg);
+
+                    var parsedHtml = marked.parse(result.aiText);
+
+                    // 3. Append Article Cards with "Open in New Tab" links if matches exist
+                    if (result.articles && result.articles.length > 0) {
+                        var topArticle = result.articles[0];
+                        var snippet = topArticle.body.length > 140 
+                            ? topArticle.body.substring(0, 140) + '...' 
+                            : topArticle.body;
+                        var fullArticleUrl = 'https://dummyjson.com/posts/' + topArticle.id;
+
+                        parsedHtml += 
+                            '<div class="article-card">' +
+                                '<div class="article-card-title">' + topArticle.title + '</div>' +
+                                '<div class="article-card-snippet">' + snippet + '</div>' +
+                                '<a class="article-link" href="' + fullArticleUrl + '" target="_blank" rel="noopener noreferrer">' +
+                                    'Open Full Article in New Tab &nbsp;↗' +
+                                '</a>' +
+                            '</div>';
+                    }
+
+                    addMessage(parsedHtml, 'bot', false);
+                })
+                .catch(function(err) {
+                    chatContainer.removeChild(loadingMsg);
+                    addMessage('An error occurred while retrieving knowledge articles.', 'bot', true);
+                });
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleSend();
+        });
+    </script>
+</body>
+</html>
