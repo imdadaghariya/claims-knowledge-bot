@@ -96,135 +96,177 @@
         <button id="send-btn">Send</button>
     </div>
 
-    <script>
-        // Replace with your active Gemini API Key
-        var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
-        var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
-        var MOCK_EGAIN_SEARCH_URL = 'https://dummyjson.com/posts/search?q=';
+   <script>
+    // Replace with your Google Gemini API Key
+    var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+    var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
 
-        var chatContainer = document.getElementById('chat-container');
-        var userInput = document.getElementById('user-input');
-        var sendBtn = document.getElementById('send-btn');
+    var chatContainer = document.getElementById('chat-container');
+    var userInput = document.getElementById('user-input');
+    var sendBtn = document.getElementById('send-btn');
 
-        function addMessage(htmlContent, sender, isRawText) {
-            var msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
+    function addMessage(htmlContent, sender, isRawText) {
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
 
-            if (sender === 'bot' && !isRawText) {
-                msgDiv.innerHTML = htmlContent;
-            } else {
-                msgDiv.textContent = htmlContent;
-            }
-
-            chatContainer.appendChild(msgDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            return msgDiv;
+        if (sender === 'bot' && !isRawText) {
+            msgDiv.innerHTML = htmlContent;
+        } else {
+            msgDiv.textContent = htmlContent;
         }
 
-        // Query mock eGain Search API
-        function searchMockEGain(query) {
-            return fetch(MOCK_EGAIN_SEARCH_URL + encodeURIComponent(query))
-                .then(function(res) {
-                    if (!res.ok) throw new Error('Search failed');
-                    return res.json();
-                })
-                .then(function(data) {
-                    return data.posts || [];
-                })
-                .catch(function(err) {
-                    console.error('[eGain API Error]', err);
-                    return [];
-                });
-        }
+        chatContainer.appendChild(msgDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        return msgDiv;
+    }
 
-        // Ask Gemini to synthesize an answer based on user query and returned articles
-        function generateAIAnswer(query, matchedArticles) {
-            var contextText = '';
-            if (matchedArticles.length > 0) {
-                contextText = 'Use these reference articles to answer:\n' +
-                    matchedArticles.map(function(a) { return '- ' + a.title + ': ' + a.body; }).join('\n');
-            }
+    /**
+     * Fetch knowledge articles using Wikipedia Opensearch & Summary APIs
+     */
+    function searchWikipediaKnowledgeBase(query) {
+        var searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' + 
+                         encodeURIComponent(query) + '&limit=1&namespace=0&format=json&origin=*';
 
-            var prompt = 'You are a claims support assistant. Answer the user question concisely in 2-3 sentences.\n' +
-                         contextText + '\n\nUser Question: ' + query;
-
-            var payload = {
-                contents: [{ parts: [{ text: prompt }] }]
-            };
-
-            return fetch(GEMINI_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
+        return fetch(searchUrl)
             .then(function(res) {
-                if (!res.ok) throw new Error('Gemini API Error');
+                if (!res.ok) throw new Error('Search failed');
                 return res.json();
             })
             .then(function(data) {
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    return data.candidates[0].content.parts[0].text;
+                // Opensearch returns: [query, [titles], [descriptions], [urls]]
+                var titles = data[1] || [];
+                var urls = data[3] || [];
+
+                if (titles.length === 0) {
+                    return null;
                 }
-                return 'No summary available.';
+
+                var matchedTitle = titles[0];
+                var matchedUrl = urls[0];
+
+                // Fetch the detailed page summary for the top matching article title
+                var summaryUrl = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(matchedTitle);
+
+                return fetch(summaryUrl)
+                    .then(function(res) {
+                        if (!res.ok) throw new Error('Summary fetch failed');
+                        return res.json();
+                    })
+                    .then(function(summaryData) {
+                        return {
+                            title: summaryData.title || matchedTitle,
+                            content: summaryData.extract || 'No article content available.',
+                            url: matchedUrl || summaryData.content_urls.desktop.page
+                        };
+                    });
             })
             .catch(function(err) {
-                return 'Here is what was found in the knowledge repository:';
+                console.error('[Wikipedia API Error]', err);
+                return null;
             });
+    }
+
+    /**
+     * Generate natural language answer using Gemini Flash based on retrieved article context
+     */
+    function generateAIAnswer(query, matchedArticle) {
+        var contextText = '';
+        if (matchedArticle) {
+            contextText = 'Use this reference article to answer:\nTitle: ' + matchedArticle.title + '\nContent: ' + matchedArticle.content;
         }
 
-        function handleSend() {
-            var text = userInput.value.replace(/^\s+|\s+$/g, '');
-            if (!text) return;
+        var prompt = 'You are an Amica enterprise claims support assistant. Answer the user question concisely in 2-3 sentences based on the provided context.\n' +
+                     contextText + '\n\nUser Question: ' + query;
 
-            addMessage(text, 'user', true);
-            userInput.value = '';
+        var payload = {
+            contents: [{ parts: [{ text: prompt }] }]
+        };
 
-            var loadingMsg = addMessage('Searching knowledge repository...', 'bot', true);
-            loadingMsg.className += ' loading';
-
-            // 1. Fetch matching articles from Mock eGain
-            searchMockEGain(text)
-                .then(function(articles) {
-                    // 2. Query Gemini for conversational synthesis
-                    return generateAIAnswer(text, articles).then(function(aiResponse) {
-                        return { articles: articles, aiText: aiResponse };
-                    });
-                })
-                .then(function(result) {
-                    chatContainer.removeChild(loadingMsg);
-
-                    var parsedHtml = marked.parse(result.aiText);
-
-                    // 3. Append Article Cards with "Open in New Tab" links if matches exist
-                    if (result.articles && result.articles.length > 0) {
-                        var topArticle = result.articles[0];
-                        var snippet = topArticle.body.length > 140 
-                            ? topArticle.body.substring(0, 140) + '...' 
-                            : topArticle.body;
-                        var fullArticleUrl = 'https://dummyjson.com/posts/' + topArticle.id;
-
-                        parsedHtml += 
-                            '<div class="article-card">' +
-                                '<div class="article-card-title">' + topArticle.title + '</div>' +
-                                '<div class="article-card-snippet">' + snippet + '</div>' +
-                                '<a class="article-link" href="' + fullArticleUrl + '" target="_blank" rel="noopener noreferrer">' +
-                                    'Open Full Article in New Tab &nbsp;↗' +
-                                '</a>' +
-                            '</div>';
-                    }
-
-                    addMessage(parsedHtml, 'bot', false);
-                })
-                .catch(function(err) {
-                    chatContainer.removeChild(loadingMsg);
-                    addMessage('An error occurred while retrieving knowledge articles.', 'bot', true);
-                });
-        }
-
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleSend();
+        return fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error('Gemini API Error');
+            return res.json();
+        })
+        .then(function(data) {
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text;
+            }
+            return 'No summary available.';
+        })
+        .catch(function(err) {
+            return 'Here is the relevant document from the knowledge base:';
         });
-    </script>
+    }
+
+    /**
+     * Trigger search execution and UI rendering
+     */
+    function triggerSearch(text) {
+        addMessage(text, 'user', true);
+
+        var loadingMsg = addMessage('Searching knowledge base & synthesizing response...', 'bot', true);
+        loadingMsg.className += ' loading';
+
+        searchWikipediaKnowledgeBase(text)
+            .then(function(article) {
+                return generateAIAnswer(text, article).then(function(aiResponse) {
+                    return { article: article, aiText: aiResponse };
+                });
+            })
+            .then(function(result) {
+                chatContainer.removeChild(loadingMsg);
+
+                // Convert AI markdown text to HTML
+                var parsedHtml = marked.parse(result.aiText);
+
+                // If a matching article was found, render its Title, Content, and Direct Link Card
+                if (result.article) {
+                    var snippet = result.article.content.length > 180 
+                        ? result.article.content.substring(0, 180) + '...' 
+                        : result.article.content;
+
+                    parsedHtml += 
+                        '<div class="article-card">' +
+                            '<div class="article-card-title">' + result.article.title + '</div>' +
+                            '<div class="article-card-snippet">' + snippet + '</div>' +
+                            '<a class="article-link" href="' + result.article.url + '" target="_blank" rel="noopener noreferrer">' +
+                                'Open Full Article in New Tab &nbsp;↗' +
+                            '</a>' +
+                        '</div>';
+                }
+
+                addMessage(parsedHtml, 'bot', false);
+            })
+            .catch(function() {
+                chatContainer.removeChild(loadingMsg);
+                addMessage('An error occurred while retrieving knowledge base articles.', 'bot', true);
+            });
+    }
+
+    function handleSend() {
+        var text = userInput.value.replace(/^\s+|\s+$/g, '');
+        if (!text) return;
+        userInput.value = '';
+        triggerSearch(text);
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') handleSend();
+    });
+
+    // Auto-run query if passed via URL parameter (?q=search_term)
+    window.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+        var queryParam = params.get('q');
+        if (queryParam && queryParam.trim().length > 0) {
+            triggerSearch(queryParam.trim());
+        }
+    });
+</script>
 </body>
 </html>
