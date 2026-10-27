@@ -3,196 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bol Bhai</title>
-    <!-- Inter Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>eGain Knowledge Assistant</title>
+    <!-- Marked.js library to parse Markdown responses -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #131314; color: #e3e3e3;
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f8fafc;
         }
-        #header { padding: 18px 24px; display: flex; align-items: center; background-color: #131314; }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .bot-icon {
-            width: 32px; height: 32px; border-radius: 50%;
-            background: linear-gradient(135deg, #ff2a5f 0%, #ff5252 40%, #ff7e40 100%);
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 12px rgba(255, 42, 95, 0.35); flex-shrink: 0;
+        #header {
+            padding: 14px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .bot-icon svg { width: 18px; height: 18px; fill: #ffffff; }
-        .brand-title { font-size: 18px; font-weight: 500; color: #e3e3e3; letter-spacing: -0.2px; }
+        #header h1 {
+            font-size: 15px; margin: 0; color: #0f172a; font-weight: 600;
+        }
+        #header span {
+            font-size: 12px; color: #0052cc; font-weight: 500;
+        }
         #chat-container {
-            flex: 1; overflow-y: auto; padding: 24px 0; display: flex; flex-direction: column;
-            gap: 24px; width: 100%; max-width: 800px; margin: 0 auto;
+            flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
         }
-        #chat-container::-webkit-scrollbar { width: 8px; }
-        #chat-container::-webkit-scrollbar-thumb { background: #282a2c; border-radius: 4px; }
-        .message-row { display: flex; gap: 16px; padding: 0 24px; width: 100%; }
-        .message-row.user { justify-content: flex-end; }
-        .user-bubble {
-            background-color: #282a2c; color: #e3e3e3; padding: 12px 20px;
-            border-radius: 20px; max-width: 75%; font-size: 15px; line-height: 1.5; word-wrap: break-word;
+        .message {
+            max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; word-wrap: break-word; font-size: 13px;
         }
-        .bot-content { flex: 1; color: #e3e3e3; font-size: 15px; line-height: 1.6; margin-top: 4px; }
-        .bot-content p { margin-bottom: 12px; }
-        .bot-content p:last-child { margin-bottom: 0; }
-        .loading-text { color: #8e918f; font-style: italic; }
-        .error-text { color: #ff6b6b; font-size: 14px; }
-        #input-wrapper { width: 100%; max-width: 800px; margin: 0 auto; padding: 0 24px 24px 24px; }
-        .input-box {
-            background-color: #1e1f20; border: 1px solid #282a2c; border-radius: 28px;
-            padding: 12px 16px 12px 22px; display: flex; align-items: center; gap: 12px;
-            transition: border-color 0.2s ease, background-color 0.2s ease;
+        .user-message {
+            background-color: #0052cc; color: white; align-self: flex-end; border-bottom-right-radius: 2px;
         }
-        .input-box:focus-within { border-color: #ff3b60; background-color: #222325; }
-        textarea {
-            flex: 1; background: transparent; border: none; outline: none;
-            color: #e3e3e3; font-family: inherit; font-size: 15px; resize: none;
-            height: 24px; max-height: 120px; line-height: 24px;
+        .bot-message {
+            background-color: #ffffff; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px;
+            border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
-        textarea::placeholder { color: #8e918f; }
-        .send-btn {
-            background: transparent; border: none; width: 36px; height: 36px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: background 0.2s ease; flex-shrink: 0;
+
+        /* Article Card Inside Chat Bubble */
+        .article-card {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: #f1f5f9;
+            border-left: 3px solid #0052cc;
+            border-radius: 6px;
         }
-        .send-btn:hover { background: linear-gradient(135deg, rgba(255, 42, 95, 0.2) 0%, rgba(255, 126, 64, 0.2) 100%); }
-        .send-btn svg { width: 20px; height: 20px; fill: #8e918f; transition: fill 0.2s ease; }
-        .send-btn:hover svg { fill: #ff5252; }
+        .article-card-title {
+            font-weight: 600; font-size: 13px; color: #0f172a; margin-bottom: 4px;
+        }
+        .article-card-snippet {
+            font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.4;
+        }
+        .article-link {
+            color: #0052cc; font-weight: 600; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .article-link:hover { text-decoration: underline; }
+
+        /* Markdown formatting */
+        .message p { margin: 0 0 8px 0; }
+        .message p:last-child { margin: 0; }
+        .message ul, .message ol { margin: 0 0 8px 0; padding-left: 18px; }
+        .message ul:last-child, .message ol:last-child { margin: 0; }
+        .loading { font-style: italic; color: #64748b; font-size: 12px; }
+
+        #input-container {
+            display: flex; padding: 12px 16px; background: white; border-top: 1px solid #e2e8f0;
+        }
+        #user-input {
+            flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 20px; outline: none; font-size: 13px;
+        }
+        #user-input:focus { border-color: #0052cc; }
+        #send-btn {
+            background-color: #0052cc; color: white; border: none; padding: 0 18px; margin-left: 8px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px;
+        }
+        #send-btn:hover { background-color: #0747a6; }
     </style>
 </head>
 <body>
-
     <div id="header">
-        <div class="brand">
-            <div class="bot-icon">
-                <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
-            </div>
-            <span class="brand-title"></span>
-        </div>
+        <h1>Claims Assistant</h1>
+        <span>Powered by eGain & Gemini</span>
     </div>
 
     <div id="chat-container">
-        <div class="message-row">
-            <div class="bot-icon">
-                <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
-            </div>
-            <div class="bot-content">
-                Hello! I am <b>Pucho Zara Pucho</b>. Ask me anything!
-            </div>
+        <div class="message bot-message">
+            Hello! I am your Claims & Knowledge Assistant. Search for policy guidelines, FNOL workflows, or SOP articles below.
         </div>
     </div>
 
-    <div id="input-wrapper">
-        <div class="input-box">
-            <textarea id="user-input" placeholder="Ask me." rows="1"></textarea>
-            <button class="send-btn" id="send-btn" title="Send">
-                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            </button>
-        </div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="Search guidelines or ask a question..." autocomplete="off">
+        <button id="send-btn">Send</button>
     </div>
 
-    <script>
-        // Insert your newly created Google Gemini API Key here
-        const GEMINI_API_KEY = 'AQ.Ab8RN6JfBSEl26mGTEkLFwnpP8EncwCjXdolqcFUCmhGEBVfvg';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY;
+   <script>
+    // Replace with your Google Gemini API Key
+    var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+    var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + GEMINI_API_KEY;
 
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
+    var chatContainer = document.getElementById('chat-container');
+    var userInput = document.getElementById('user-input');
+    var sendBtn = document.getElementById('send-btn');
 
-        userInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
+    function addMessage(htmlContent, sender, isRawText) {
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
 
-        function addMessage(content, sender = 'bot', isTextOnly = false) {
-            const row = document.createElement('div');
-            row.className = `message-row ${sender}`;
-
-            if (sender === 'user') {
-                row.innerHTML = `<div class="user-bubble">${content}</div>`;
-            } else {
-                const formattedHtml = isTextOnly ? content : marked.parse(content);
-                row.innerHTML = `
-                    <div class="bot-icon">
-                        <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
-                    </div>
-                    <div class="bot-content">${formattedHtml}</div>
-                `;
-            }
-
-            chatContainer.appendChild(row);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            return row;
+        if (sender === 'bot' && !isRawText) {
+            msgDiv.innerHTML = htmlContent;
+        } else {
+            msgDiv.textContent = htmlContent;
         }
 
-        async function fetchGeminiResponse(prompt) {
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }]
-            };
+        chatContainer.appendChild(msgDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        return msgDiv;
+    }
 
-            try {
-                const response = await fetch(GEMINI_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+    /**
+     * Fetch knowledge articles using Wikipedia Opensearch & Summary APIs
+     */
+    function searchWikipediaKnowledgeBase(query) {
+        var searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' + 
+                         encodeURIComponent(query) + '&limit=1&namespace=0&format=json&origin=*';
+
+        return fetch(searchUrl)
+            .then(function(res) {
+                if (!res.ok) throw new Error('Search failed');
+                return res.json();
+            })
+            .then(function(data) {
+                // Opensearch returns: [query, [titles], [descriptions], [urls]]
+                var titles = data[1] || [];
+                var urls = data[3] || [];
+
+                if (titles.length === 0) {
+                    return null;
+                }
+
+                var matchedTitle = titles[0];
+                var matchedUrl = urls[0];
+
+                // Fetch the detailed page summary for the top matching article title
+                var summaryUrl = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(matchedTitle);
+
+                return fetch(summaryUrl)
+                    .then(function(res) {
+                        if (!res.ok) throw new Error('Summary fetch failed');
+                        return res.json();
+                    })
+                    .then(function(summaryData) {
+                        return {
+                            title: summaryData.title || matchedTitle,
+                            content: summaryData.extract || 'No article content available.',
+                            url: matchedUrl || summaryData.content_urls.desktop.page
+                        };
+                    });
+            })
+            .catch(function(err) {
+                console.error('[Wikipedia API Error]', err);
+                return null;
+            });
+    }
+
+    /**
+     * Generate natural language answer using Gemini Flash based on retrieved article context
+     */
+    function generateAIAnswer(query, matchedArticle) {
+        var contextText = '';
+        if (matchedArticle) {
+            contextText = 'Use this reference article to answer:\nTitle: ' + matchedArticle.title + '\nContent: ' + matchedArticle.content;
+        }
+
+        var prompt = 'You are an Amica enterprise claims support assistant. Answer the user question concisely in 2-3 sentences based on the provided context.\n' +
+                     contextText + '\n\nUser Question: ' + query;
+
+        var payload = {
+            contents: [{ parts: [{ text: prompt }] }]
+        };
+
+        return fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error('Gemini API Error');
+            return res.json();
+        })
+        .then(function(data) {
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text;
+            }
+            return 'No summary available.';
+        })
+        .catch(function(err) {
+            return 'Here is the relevant document from the knowledge base:';
+        });
+    }
+
+    /**
+     * Trigger search execution and UI rendering
+     */
+    function triggerSearch(text) {
+        addMessage(text, 'user', true);
+
+        var loadingMsg = addMessage('Searching knowledge base & synthesizing response...', 'bot', true);
+        loadingMsg.className += ' loading';
+
+        searchWikipediaKnowledgeBase(text)
+            .then(function(article) {
+                return generateAIAnswer(text, article).then(function(aiResponse) {
+                    return { article: article, aiText: aiResponse };
                 });
+            })
+            .then(function(result) {
+                chatContainer.removeChild(loadingMsg);
 
-                if (!response.ok) {
-                    const errData = await response.json();
-                    console.error('[Gemini API Error Detail]', errData);
-                    throw new Error(`HTTP Error ${response.status}: ${errData.error?.message || 'Request Failed'}`);
+                // Convert AI markdown text to HTML
+                var parsedHtml = marked.parse(result.aiText);
+
+                // If a matching article was found, render its Title, Content, and Direct Link Card
+                if (result.article) {
+                    var snippet = result.article.content.length > 180 
+                        ? result.article.content.substring(0, 180) + '...' 
+                        : result.article.content;
+
+                    parsedHtml += 
+                        '<div class="article-card">' +
+                            '<div class="article-card-title">' + result.article.title + '</div>' +
+                            '<div class="article-card-snippet">' + snippet + '</div>' +
+                            '<a class="article-link" href="' + result.article.url + '" target="_blank" rel="noopener noreferrer">' +
+                                'Open Full Article in New Tab &nbsp;↗' +
+                            '</a>' +
+                        '</div>';
                 }
 
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    return data.candidates[0].content.parts[0].text;
-                }
-                return 'No response text received from Gemini.';
-            } catch (err) {
-                console.error('[Gemini API Catch]', err);
-                return `<span class="error-text">⚠️ <b>Connection Error:</b> ${err.message}</span>`;
-            }
+                addMessage(parsedHtml, 'bot', false);
+            })
+            .catch(function() {
+                chatContainer.removeChild(loadingMsg);
+                addMessage('An error occurred while retrieving knowledge base articles.', 'bot', true);
+            });
+    }
+
+    function handleSend() {
+        var text = userInput.value.replace(/^\s+|\s+$/g, '');
+        if (!text) return;
+        userInput.value = '';
+        triggerSearch(text);
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') handleSend();
+    });
+
+    // Auto-run query if passed via URL parameter (?q=search_term)
+    window.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+        var queryParam = params.get('q');
+        if (queryParam && queryParam.trim().length > 0) {
+            triggerSearch(queryParam.trim());
         }
-
-        async function handleSend() {
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            addMessage(text, 'user');
-            userInput.value = '';
-            userInput.style.height = '24px';
-
-            const loadingRow = addMessage('<span class="loading-text">Thinking...</span>', 'bot', true);
-            const geminiAnswer = await fetchGeminiResponse(text);
-
-            chatContainer.removeChild(loadingRow);
-            addMessage(geminiAnswer, 'bot');
-        }
-
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const queryParam = params.get('q');
-            if (queryParam && queryParam.trim().length > 0) {
-                userInput.value = queryParam.trim();
-                handleSend();
-            }
-        });
-    </script>
+    });
+</script>
 </body>
 </html>
